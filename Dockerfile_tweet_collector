@@ -1,0 +1,9 @@
+FROM python:3.6-slim
+WORKDIR /app
+COPY requirements.txt /app/
+RUN pip install --trusted-host pypi.python.org -r requirements.txt
+COPY tweetl /app/tweetl/
+COPY .env /app/
+RUN ["/bin/bash", "-c", "source /app/.env"]
+CMD ["python", "/app/tweetl/get_tweets.py", "--hostname $MONGO_CONTAINER_NAME",\
+ "$KEYWORDS"]
