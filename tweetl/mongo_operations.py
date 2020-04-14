@@ -2,17 +2,15 @@
 Module containing all pymongo-based operations for the tweetl package
 Python logging level can be set with the environment variable LOGGING_LEVEL
 """
-import os
+import logging
 from time import time
 
 import pymongo
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from dotenv import load_dotenv
 
-from tweetl_log import set_up_log
-
 load_dotenv()
-LOG = set_up_log(level=os.getenv("LOGGING_LEVEL"))
+LOG = logging.getLogger('tweetl.mongo_operations')
 
 
 def get_tweet_collection(hostname="mongodb", db_name="tweet_db",

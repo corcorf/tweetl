@@ -3,6 +3,7 @@ Module containing all SQL alchemy-based operations for the tweetl package
 Python logging level can be set with the environment variable LOGGING_LEVEL
 """
 import os
+import logging
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -13,10 +14,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from dotenv import load_dotenv
 
-from tweetl_log import set_up_log
-
 load_dotenv()
-LOG = set_up_log(level=os.getenv("LOGGING_LEVEL"))
+LOG = logging.getLogger('tweetl.sql_operations')
 
 HOST = 'localhost'
 PORT = '5432'

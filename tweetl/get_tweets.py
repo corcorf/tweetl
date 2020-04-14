@@ -7,18 +7,18 @@ Python logging level can be set with the environment variable LOGGING_LEVEL
 """
 import os
 import json
-import time
+from time import time
 import argparse
+import logging
 
 from tweepy import OAuthHandler, Stream
 from tweepy.streaming import StreamListener
 from dotenv import load_dotenv
 
-from mongo_operations import get_tweet_collection
-from tweetl_log import set_up_log
+from tweetl.mongo_operations import get_tweet_collection
 
 load_dotenv()
-LOG = set_up_log(level=os.getenv("LOGGING_LEVEL"))
+LOG = logging.getLogger('tweetl.get_tweets')
 
 
 class TwitterListener(StreamListener):
@@ -40,8 +40,8 @@ class TwitterListener(StreamListener):
         every single tweet as it is intercepted in real-time
         """
         tweet_content = json.loads(data)
+        text = tweet_content.get("text")
 
-        text = tweet_content['text']
         if 'extended_tweet' in tweet_content:
             text = tweet_content['extended_tweet']['full_text']
         if 'retweeted_status' in tweet_content:
@@ -49,11 +49,14 @@ class TwitterListener(StreamListener):
             if 'extended_tweet' in r:
                 text = r['extended_tweet']['full_text']
 
-        LOG.info('\nTWEET INCOMING: %s\n', text)
+        if text is not None:
+            LOG.info('\nTWEET INCOMING: %s\n', text)
+        else:
+            LOG.info('\nAPI MESSAGE: %s\n', tweet_content)
 
         entry = {'key_words': self.keywords,
                  'tweet': tweet_content,
-                 'mongo_entry_ts': time.time()}
+                 'mongo_entry_ts': time()}
         self.collection.insert_one(entry)
 
     def on_error(self, status):
@@ -88,9 +91,9 @@ def get_arguments():
     specified keywords.'
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("--hostname", dest='hostname', type=str, nargs='?',
-                        default="mongodb",
+                        default="",
                         help='Specify the MongoDB hostname')
-    parser.add_argument(dest='key_words', type=str, nargs='+',
+    parser.add_argument(dest='key_words', type=str, nargs='*',
                         help='Keywords that collected tweets will include')
     return parser.parse_args()
 
@@ -102,11 +105,19 @@ def main():
     The TwitterListener sends the tweet data directly to a mongodb collection
     """
     args = get_arguments()
-    key_words = args.key_words
-    hostname = args.hostname
 
-    LOG.info('\n%s\n', key_words)
+    if not args.hostname:
+        hostname = os.getenv("MONGO_CONTAINER_NAME", default="mongodb")
+    else:
+        hostname = args.hostname
 
+    if not args.key_words:
+        key_words = os.getenv("KEYWORDS")
+    else:
+        key_words = args.key_words
+
+    LOG.info('Hostname: %s', hostname)
+    LOG.info('Keywords: %s', key_words)
     tweet_collection = get_tweet_collection(hostname=hostname)
 
     auth = authenticate()

@@ -2,22 +2,21 @@
 Module containing the extract-transform-load job for the tweetl package
 Python logging level can be set with the environment variable LOGGING_LEVEL
 """
-import os
+import logging
 from time import time
 
 from dotenv import load_dotenv
 
-from mongo_operations import extract_tweets, transform_data
-from sql_operations import CONN_STRING
-from sql_operations import write_to_tweet_database
-from tweetl_log import set_up_log
+from tweetl.mongo_operations import extract_tweets, transform_data
+from tweetl.sql_operations import CONN_STRING
+from tweetl.sql_operations import write_to_tweet_database
 
 load_dotenv()
 
 if __name__ == "__main__":
     HOST = "tweet_collector_mongodb_1"
     FREQ = 300
-    LOG = set_up_log(level=os.getenv("LOGGING_LEVEL"))
+    LOG = logging.getLogger('tweetl.etl')
     LAST_PULL = 0
     LOG.debug('Initialising pull time: %s', LAST_PULL)
 
