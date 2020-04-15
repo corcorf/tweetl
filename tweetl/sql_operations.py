@@ -154,7 +154,7 @@ def write_to_tweet_database(transformed_data_list, conn_string, echo=False):
         current_tweet_data = transformed_item['tweet_data']
         keyword = transformed_item['key_word'][0]
         LOG.debug('keyword: %s', keyword)
-        kw_tweet_pair = {'tweet_id': current_tweet_data['tweet_id'],
+        kw_tweet_pair = {'tweet_id': current_tweet_data['id'],
                          'keywords': keyword}
 
         write_to_table(current_user_data, UserData, session)

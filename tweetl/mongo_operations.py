@@ -47,7 +47,7 @@ def get_user_data(tweet):
     """
     t = tweet
     current_user_data = {}
-    current_user_data['user_id'] = t['user']['id']
+    current_user_data['id'] = t['user']['id']
     current_user_data['name'] = t['user']['name']
     current_user_data['screen_name'] = t['user']['screen_name']
     current_user_data['location'] = t['user']['location']
@@ -59,6 +59,23 @@ def get_user_data(tweet):
     return current_user_data
 
 
+def rename_vader_score_keys(polarity_scores_dict):
+    """
+    Change the keys of a vader polarity_scores dictionary to match columns in
+    the tweetl sql database
+    Returns the updated dictionary
+    """
+    translation = {
+        "sentiment_positivity": "pos",
+        "sentiment_compound": "compound",
+        "sentiment_neutrality": "neu",
+        "sentiment_negativity": "neg",
+    }
+    for new, old in translation.items():
+        polarity_scores_dict[new] = polarity_scores_dict.pop(old)
+    return polarity_scores_dict
+
+
 def get_tweet_sentiment(tweet):
     """
     Take a tweet json, pass the text into vaderSentiment and return the
@@ -68,7 +85,9 @@ def get_tweet_sentiment(tweet):
     tweet_text = tweet['text']
     if 'extended_tweet' in tweet:
         tweet_text = tweet['extended_tweet']['full_text']
-    return s.polarity_scores(tweet_text)
+    polarity_scores = s.polarity_scores(tweet_text)
+    polarity_scores = rename_vader_score_keys(polarity_scores)
+    return polarity_scores
 
 
 def get_tweet_data(tweet):
@@ -77,7 +96,7 @@ def get_tweet_data(tweet):
     """
     t = tweet
     current_tweet_data = {}
-    current_tweet_data['tweet_id'] = t['id']
+    current_tweet_data['id'] = t['id']
     current_tweet_data['favorited'] = t['favorited']
     current_tweet_data['favorite_count'] = t['favorite_count']
     current_tweet_data['quote_count'] = t['quote_count']
@@ -89,8 +108,8 @@ def get_tweet_data(tweet):
     except (KeyError, TypeError):
         pass
     current_tweet_data["created_at"] = t["created_at"]
-    current_tweet_data["user_id"] = t['user']['id']
     current_tweet_data['text'] = t['text']
+    current_tweet_data["user_id"] = t['user']['id']
     hashtags = t['entities']['hashtags']
     if 'extended_tweet' in t:
         current_tweet_data['text'] = t['extended_tweet']['full_text']
@@ -117,18 +136,19 @@ def transform_data(data_list):
     for item in data_list:
         try:
             tweet = item['tweet']
-            transformed_item = {
-                'tweet_id': tweet['id'],
-                'key_word': item['key_words'],
-                'mongo_entry_ts': item['mongo_entry_ts'],
-                'user_data': get_user_data(tweet),
-                'tweet_data': get_tweet_data(tweet)
-            }
-            transformed_data_list.append(transformed_item)
         except KeyError:
             LOG.debug(
                 "skipping item in transformed data with no 'tweet' entry"
             )
+            return None
+        transformed_item = {
+            'tweet_id': tweet['id'],
+            'key_word': item['key_words'],
+            'mongo_entry_ts': item['mongo_entry_ts'],
+            'user_data': get_user_data(tweet),
+            'tweet_data': get_tweet_data(tweet)
+        }
+        transformed_data_list.append(transformed_item)
     return transformed_data_list
 
 
@@ -138,6 +158,6 @@ def extract_tweets(last_pull_time, host):
     last data pull
     """
     LOG.debug('Trying to extract tweets from mongo')
+    new_pull_time = time()
     extracted_data = extract_new_data(last_pull_time, host)
-    pull_time = time()
-    return extracted_data, pull_time
+    return extracted_data, new_pull_time

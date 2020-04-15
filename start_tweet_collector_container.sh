@@ -29,5 +29,6 @@ docker run --name $container_name -it \
 --net=$NETWORK_NAME \
 -v ${PWD}/${host_log_dir}:$CONTAINER_LOG_PATH \
 --link $MONGO_CONTAINER_NAME \
+-d \
 tweetl:latest \
 get_tweets --mongo_hostname $MONGO_CONTAINER_NAME --key_words $keyword

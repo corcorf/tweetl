@@ -45,11 +45,11 @@ else
   /bin/bash start_postgres_container.sh
   # sleep long enough to allow mongo to initialise
   /bin/bash build_tweetl_image.sh
-  /bin/bash start_etl_job_container.sh
   for kw in $keywords
   do
     /bin/bash start_tweet_collector_container.sh $kw
   done
+  /bin/bash start_etl_job_container.sh
   # /bin/bash start_slackbot_container.sh
   echo
   echo Done

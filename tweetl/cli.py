@@ -37,7 +37,7 @@ def add_postgres_args(parser):
         help='Specify the PostGreSQL hostname'
     )
     parser.add_argument(
-        "-d", "--pg_database", type=str, default="postgres",
+        "-d", "--pg_database", type=str, default="tweetl_db",
         help='Specify the PostGreSQL database name'
     )
     parser.add_argument(
@@ -60,7 +60,7 @@ def add_mongo_args(parser):
     Add arguments to the parser that are used by all functions
     """
     parser.add_argument(
-        "-m", "--mongo_hostname", type=str, default="mongodb",
+        "-m", "--mongo_hostname", type=str, default="localhost",
         help='Specify the MongoDB hostname'
     )
     return parser

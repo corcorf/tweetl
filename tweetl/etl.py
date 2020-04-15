@@ -19,11 +19,13 @@ LOG = logging.getLogger('tweetl.etl')
 def etl_round(last_pull_time, mongo_hostname, sql_conn_string):
     """
     Do an etl round
+    return the time
     """
     extracted, last_pull_time = extract_tweets(last_pull_time, mongo_hostname)
     transformed = transform_data(extracted)
     write_to_tweet_database(transformed, sql_conn_string)
     LOG.debug('etl_round_done')
+    return last_pull_time
 
 
 def main(args):
@@ -48,7 +50,9 @@ def main(args):
     )
 
     while True:
-        etl_round(last_pull_time, mongo_hostname, sql_conn_string)
+        last_pull_time = etl_round(
+            last_pull_time, mongo_hostname, sql_conn_string
+        )
         sleep(freq)
 
 
