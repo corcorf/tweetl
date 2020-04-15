@@ -8,6 +8,7 @@ import cli
 import etl
 import get_tweets
 import mongo_operations
+import slack_bot
 import sql_operations
 import tweetl_log
 

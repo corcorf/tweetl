@@ -76,7 +76,7 @@ def get_arguments():
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
         'module', type=str,
-        help='tweetl module to be run (get_tweets or etl)'
+        help='tweetl module to be run (get_tweets, etl or slack_bot)'
     )
     parser = add_mongo_args(parser)
     parser = add_postgres_args(parser)

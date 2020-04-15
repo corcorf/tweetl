@@ -102,7 +102,7 @@ def get_tweet_data(tweet):
     current_tweet_data['quote_count'] = t['quote_count']
     current_tweet_data['retweet_count'] = t['retweet_count']
     current_tweet_data['reply_count'] = t['reply_count']
-    current_tweet_data['timestamp_ms'] = t['timestamp_ms']
+    current_tweet_data['timestamp_ms'] = int(t['timestamp_ms'])
     try:
         current_tweet_data['place'] = t['place']['full_name']
     except (KeyError, TypeError):

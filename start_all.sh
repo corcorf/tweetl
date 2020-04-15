@@ -50,7 +50,7 @@ else
     /bin/bash start_tweet_collector_container.sh $kw
   done
   /bin/bash start_etl_job_container.sh
-  # /bin/bash start_slackbot_container.sh
+  /bin/bash start_slack_bot_container.sh $kw
   echo
   echo Done
 fi

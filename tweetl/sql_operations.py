@@ -5,6 +5,7 @@ Python logging level can be set with the environment variable LOGGING_LEVEL
 import os
 import logging
 
+import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -13,6 +14,8 @@ from sqlalchemy import (Column, ForeignKey, Integer, String, Boolean, DateTime,
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from dotenv import load_dotenv
+from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
+from sqlalchemy.inspection import inspect
 
 load_dotenv()
 LOG = logging.getLogger('tweetl.sql_operations')
@@ -58,7 +61,7 @@ class TweetData(BASE):
     quote_count = Column(Integer)
     retweet_count = Column(Integer)
     reply_count = Column(Integer)
-    timestamp_ms = Column(String)
+    timestamp_ms = Column(BigInteger)
     coordinates = Column(String)
     place = Column(String)
     created_at = Column(DateTime)
@@ -160,3 +163,82 @@ def write_to_tweet_database(transformed_data_list, conn_string, echo=False):
         write_to_table(current_user_data, UserData, session)
         write_to_table(current_tweet_data, TweetData, session)
         write_to_table(kw_tweet_pair, KeywordMatches, session)
+
+
+def one_or_more_results(query):
+    """
+    Return True if query contains one or more results, otherwise False
+    """
+    try:
+        query.one()
+    except NoResultFound:
+        return False
+    except MultipleResultsFound:
+        pass
+    return True
+
+
+def get_tweets_since(since_datetime, conn_string,
+                     table=TweetData,
+                     datetime_col="timestamp_ms", echo=False):
+    """
+    Retrieve all tweets since since_datetime
+    Return as a dataframe
+    """
+    engine = create_engine(conn_string, echo=echo)
+    session = sessionmaker(bind=engine)()
+    since_timestamp_ms = since_datetime.timestamp() * 1000
+    query = session.query(table)\
+                   .filter(getattr(table, datetime_col) >= since_timestamp_ms)
+    if one_or_more_results(query):
+        output_cols = [c.name for c in inspect(table).columns]
+        result = query.values(*output_cols)
+        result = pd.DataFrame(result)
+        result = result.sort_values(by=datetime_col)
+    else:
+        result = None
+    return result
+
+
+def get_tweets_between(start_datetime, end_datetime, conn_string,
+                       table=TweetData, keywords=None, keywords_col="text",
+                       datetime_col="timestamp_ms", echo=False):
+    """
+    Retrieve all tweets in the db posted between start_datetime and
+    end_datetime, optionally filtered by keywords
+    Return as a dataframe
+    """
+    engine = create_engine(conn_string, echo=echo)
+    session = sessionmaker(bind=engine)()
+    start_timestamp_ms = start_datetime.timestamp() * 1000
+    end_timestamp_ms = end_datetime.timestamp() * 1000
+    query = session.query(table)\
+                   .filter(getattr(table, datetime_col) >= start_timestamp_ms)\
+                   .filter(getattr(table, datetime_col) < end_timestamp_ms)
+    if isinstance(keywords, str):
+        # query = query.subquery()
+        ...
+    if one_or_more_results(query):
+        output_cols = [c.name for c in inspect(table).columns]
+        result = query.values(*output_cols)
+        result = pd.DataFrame(result)
+        result = result.sort_values(by=datetime_col)
+    else:
+        result = None
+    return result
+
+
+
+# def get_tweets_for_time_window(start_time, end_time, search_term, conn_string):
+#     """
+#     """
+#     engine = create_engine(conn_string, echo=False)
+#     tweets = TweetData
+#     s = tweets.select(
+#             and_(tweets.c.created_at > start_time,
+#                  tweets.c.text.like(f'%{search_term}%'))
+#         )
+#     #run(s)func.lower(User.username)
+#     result = engine.execute(s)
+#     result = result.fetchall()
+#     return result
