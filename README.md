@@ -1,7 +1,7 @@
 # tweetl
 Containerised ETL pipeline for sentiment analysis of tweets.
 
-NB: this repo requires you to have your own API keys for Twitter and Slack
+NB: this repo requires you to have your own API keys for Twitter and Slack. You'll also need to have docker up and running on your machine.
 
 ## Usage:
 - rename or copy .env_example as .env
