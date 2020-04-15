@@ -3,26 +3,55 @@ Module containing the extract-transform-load job for the tweetl package
 Python logging level can be set with the environment variable LOGGING_LEVEL
 """
 import logging
-from time import time
+from time import sleep
 
 from dotenv import load_dotenv
 
 from tweetl.mongo_operations import extract_tweets, transform_data
-from tweetl.sql_operations import CONN_STRING
-from tweetl.sql_operations import write_to_tweet_database
+from tweetl.sql_operations import write_to_tweet_database, get_conn_string
+from tweetl.cli import get_etl_arguments
 
 load_dotenv()
 
-if __name__ == "__main__":
-    HOST = "tweet_collector_mongodb_1"
-    FREQ = 300
-    LOG = logging.getLogger('tweetl.etl')
-    LAST_PULL = 0
-    LOG.debug('Initialising pull time: %s', LAST_PULL)
+LOG = logging.getLogger('tweetl.etl')
+
+
+def etl_round(last_pull_time, mongo_hostname, sql_conn_string):
+    """
+    Do an etl round
+    """
+    extracted, last_pull_time = extract_tweets(last_pull_time, mongo_hostname)
+    transformed = transform_data(extracted)
+    write_to_tweet_database(transformed, sql_conn_string)
+    LOG.debug('etl_round_done')
+
+
+def main(args):
+    """
+    Run etl job with arguments from command line
+    args should be an argparse namespace object including the following fields:
+        freq (integer): time in seconds to wait between etl rounds
+        mongo_hostname (string): name of host running mongodb instance
+        postgres_hostname (string): name of host running postgresql instance
+    """
+    last_pull_time = 0
+    LOG.debug('Initialising pull time: %s', last_pull_time)
+    freq = args.freq
+    mongo_hostname = args.mongo_hostname
+
+    sql_conn_string = get_conn_string(
+        host=args.pg_hostname,
+        port=args.pg_port,
+        username=args.pg_user,
+        password=args.pg_password,
+        db=args.pg_database,
+    )
 
     while True:
-        extracted, LAST_PULL = extract_tweets(LAST_PULL, HOST)
-        transformed = transform_data(extracted)
-        write_to_tweet_database(transformed, CONN_STRING)
-        LOG.debug('etl_round_done')
-        time.sleep(FREQ)
+        etl_round(last_pull_time, mongo_hostname, sql_conn_string)
+        sleep(freq)
+
+
+if __name__ == "__main__":
+    args = get_etl_arguments()
+    main(args)

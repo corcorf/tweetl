@@ -19,9 +19,9 @@ LOG = logging.getLogger('tweetl.sql_operations')
 
 HOST = 'localhost'
 PORT = '5432'
-USERNAME = 'flann'
-PASSWORD = os.getenv('pgpassword')
-DB = 'ireland_ge2020'
+USERNAME = os.getenv('USER')
+PASSWORD = os.getenv('PGPASSWORD')
+DB = os.getenv("PG_DB_NAME")
 CONN_STRING = f'postgres://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DB}'
 
 ENGINE = create_engine(CONN_STRING, echo=False)
@@ -93,15 +93,25 @@ class KeywordMatches(BASE):
         return f'KeywordMatches {self.id}'
 
 
-def create_tables(engine=ENGINE):
+def get_conn_string(host='localhost', port=5432, username=os.getenv('USER'),
+                    password=os.getenv('PGPASSWORD'),
+                    db=os.getenv("PG_DB_NAME")):
+    """
+    Return a sql connection string suitable for use by sqlalchemy
+    """
+    return f'postgres://{username}:{password}@{host}:{port}/{db}'
+
+
+def create_tables(conn_string, echo=False):
     """
     Create the defined tables in a database defined by the conn_string if they
     don't already exist
     """
+    engine = create_engine(conn_string, echo=echo)
     BASE.metadata.create_all(engine)
 
 
-def check_for_duplicates(entry, table, session=SESSION()):
+def check_for_duplicates(entry, table, session):
     """
     Return True if an entry with the same primary key already exists in the
     table
@@ -116,7 +126,7 @@ def check_for_duplicates(entry, table, session=SESSION()):
     return bool([val for val in session.query(table).filter_by(**new_values)])
 
 
-def write_to_table(data_dict, table_object, session=SESSION()):
+def write_to_table(data_dict, table_object, session):
     """
     accept a dictionary containing data and pass into an sqlalchemy table
     object return None
@@ -129,14 +139,15 @@ def write_to_table(data_dict, table_object, session=SESSION()):
         session.commit()
 
 
-def write_to_tweet_database(transformed_data_list, echo=False, engine=ENGINE):
+def write_to_tweet_database(transformed_data_list, conn_string, echo=False):
     """
     take a list of transformed tweet data and enter everything into an sql
     database returns None
     """
     LOG.debug('Writing tweet to database')
-    create_tables(engine=ENGINE)
-    session = sessionmaker(bind=ENGINE)()
+    create_tables(conn_string, echo=echo)
+    engine = create_engine(conn_string, echo=echo)
+    session = sessionmaker(bind=engine)()
 
     for transformed_item in transformed_data_list:
         current_user_data = transformed_item['user_data']

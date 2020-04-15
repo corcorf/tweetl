@@ -10,9 +10,7 @@ fi
 echo "#######################"
 echo
 
-keyword=$1
-echo "container keyword $keyword"
-container_name="${TWEET_COLLECTOR_IMAGE_NAME}_${keyword}"
+container_name=$ETL_JOB_CONTAINER_NAME
 host_log_dir=logs
 echo "host_log_dir: ${PWD}/${host_log_dir}"
 
@@ -28,6 +26,15 @@ docker run --name $container_name -it \
 -e CONTAINER_NAME=${container_name} \
 --net=$NETWORK_NAME \
 -v ${PWD}/${host_log_dir}:$CONTAINER_LOG_PATH \
+--link $PG_CONTAINER_NAME \
 --link $MONGO_CONTAINER_NAME \
+-d \
 tweetl:latest \
-get_tweets --mongo_hostname $MONGO_CONTAINER_NAME --key_words $keyword
+etl \
+--mongo_hostname $MONGO_CONTAINER_NAME \
+--freq $ETL_FREQUENCY \
+--pg_hostname $PG_CONTAINER_NAME \
+--pg_database $PG_DB_NAME \
+--pg_port 5432 \
+--pg_user $PG_USER \
+--pg_password $PG_PASSWORD

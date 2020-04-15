@@ -33,12 +33,14 @@ def set_up_log(level=os.getenv("LOGGING_LEVEL"),
     log_filename = os.path.join(log_path, log_filename)
     file_handler = logging.FileHandler(log_filename, mode='a')
     file_handler.setFormatter(formatter)
-    if level.upper() in ["DEBUG", "ERROR", "WARNING", "INFO", "CRITICAL"]:
-        file_handler.setLevel(getattr(logging, level.upper()))
+    if level is None or level.upper() not in [
+        "DEBUG", "ERROR", "WARNING", "INFO", "CRITICAL"
+    ]:
+        file_handler.setLevel(logging.DEBUG)
     else:
-        file_handler.setLevel(logging.INFO)
+        file_handler.setLevel(getattr(logging, level.upper()))
 
     log.addHandler(console_handler)
     log.addHandler(file_handler)
-
+    log.info("Logging level set at %s based on input %s", log.level, level)
     return log

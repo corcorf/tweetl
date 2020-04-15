@@ -115,15 +115,20 @@ def transform_data(data_list):
     LOG.debug('Transforming tweet data')
     transformed_data_list = []
     for item in data_list:
-        tweet = item['tweet']
-        transformed_item = {
-            'tweet_id': tweet['id'],
-            'key_word': item['key_words'],
-            'mongo_entry_ts': item['mongo_entry_ts'],
-            'user_data': get_user_data(tweet),
-            'tweet_data': get_tweet_data(tweet)
-        }
-        transformed_data_list.append(transformed_item)
+        try:
+            tweet = item['tweet']
+            transformed_item = {
+                'tweet_id': tweet['id'],
+                'key_word': item['key_words'],
+                'mongo_entry_ts': item['mongo_entry_ts'],
+                'user_data': get_user_data(tweet),
+                'tweet_data': get_tweet_data(tweet)
+            }
+            transformed_data_list.append(transformed_item)
+        except KeyError:
+            LOG.debug(
+                "skipping item in transformed data with no 'tweet' entry"
+            )
     return transformed_data_list
 
 
@@ -133,10 +138,6 @@ def extract_tweets(last_pull_time, host):
     last data pull
     """
     LOG.debug('Trying to extract tweets from mongo')
-
     extracted_data = extract_new_data(last_pull_time, host)
-
-    LOG.debug('First item from extracted tweet data: %s',
-              extracted_data[-1])
     pull_time = time()
     return extracted_data, pull_time

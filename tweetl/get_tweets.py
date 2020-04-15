@@ -8,7 +8,6 @@ Python logging level can be set with the environment variable LOGGING_LEVEL
 import os
 import json
 from time import time
-import argparse
 import logging
 
 from tweepy import OAuthHandler, Stream
@@ -16,6 +15,7 @@ from tweepy.streaming import StreamListener
 from dotenv import load_dotenv
 
 from tweetl.mongo_operations import get_tweet_collection
+from tweetl.cli import get_tweet_search_arguments
 
 load_dotenv()
 LOG = logging.getLogger('tweetl.get_tweets')
@@ -82,40 +82,14 @@ def authenticate():
     return auth
 
 
-def get_arguments():
-    """
-    Get keywords as arguments from the command line
-    """
-    LOG.debug("fetching arguments")
-    description = 'Set up a Tweepy StreamListener to gather tweets based on \
-    specified keywords.'
-    parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("--hostname", dest='hostname', type=str, nargs='?',
-                        default="",
-                        help='Specify the MongoDB hostname')
-    parser.add_argument(dest='key_words', type=str, nargs='*',
-                        help='Keywords that collected tweets will include')
-    return parser.parse_args()
-
-
-def main():
+def main(args):
     """
     Set up TwitterListener to listen for tweets containing one or more of
     key_words (list)
     The TwitterListener sends the tweet data directly to a mongodb collection
     """
-    args = get_arguments()
-
-    if not args.hostname:
-        hostname = os.getenv("MONGO_CONTAINER_NAME", default="mongodb")
-    else:
-        hostname = args.hostname
-
-    if not args.key_words:
-        key_words = os.getenv("KEYWORDS")
-    else:
-        key_words = args.key_words
-
+    hostname = args.mongo_hostname
+    key_words = args.key_words
     LOG.info('Hostname: %s', hostname)
     LOG.info('Keywords: %s', key_words)
     tweet_collection = get_tweet_collection(hostname=hostname)
@@ -130,4 +104,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    args = get_tweet_search_arguments()
+    main(args)
