@@ -16,3 +16,7 @@ NB: this repo requires you to have your own API keys for Twitter and Slack
 - ETL using python, sqlalchemy, pymongo, pandas
 - Sentiment analysis with Vader
 - Single Docker image with pip-installable tweetl python package for tweet collection, etl and slack-bot functions
+
+## Coming Soon...
+- Container management with Kubernetes
+- ETL scheduling with Airflow
