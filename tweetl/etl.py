@@ -7,8 +7,9 @@ from time import sleep
 
 from dotenv import load_dotenv
 
-from tweetl.mongo_operations import extract_tweets, transform_data
-from tweetl.sql_operations import write_to_tweet_database, get_conn_string
+from tweetl.mongo_operations import extract_new_data, transform_data
+from tweetl.sql_operations import (write_to_tweet_database, get_conn_string,
+                                   get_last_mongo_time)
 from tweetl.cli import get_etl_arguments
 
 load_dotenv()
@@ -16,16 +17,16 @@ load_dotenv()
 LOG = logging.getLogger('tweetl.etl')
 
 
-def etl_round(last_pull_time, mongo_hostname, sql_conn_string):
+def etl_round(mongo_hostname, sql_conn_string):
     """
     Do an etl round
     return the time
     """
-    extracted, last_pull_time = extract_tweets(last_pull_time, mongo_hostname)
+    last_pull_time = get_last_mongo_time(sql_conn_string)
+    extracted = extract_new_data(last_pull_time, mongo_hostname)
     transformed = transform_data(extracted)
     write_to_tweet_database(transformed, sql_conn_string)
     LOG.debug('etl_round_done')
-    return last_pull_time
 
 
 def main(args):
@@ -50,8 +51,8 @@ def main(args):
     )
 
     while True:
-        last_pull_time = etl_round(
-            last_pull_time, mongo_hostname, sql_conn_string
+        etl_round(
+            mongo_hostname, sql_conn_string
         )
         sleep(freq)
 

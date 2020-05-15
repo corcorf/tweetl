@@ -43,7 +43,6 @@ class UserData(BASE):
     favourites_count = Column(Integer)
     friends_count = Column(Integer)
     statuses_count = Column(Integer)
-    time_created_mongo = Column(Float)
     time_created_sql = Column(DateTime(timezone=True),
                               server_default=func.now())
 
@@ -87,6 +86,7 @@ class KeywordMatches(BASE):
     id = Column(Integer, primary_key=True)
     keywords = Column(String)
     tweet_id = Column(BigInteger, ForeignKey('tweet_data.id'))
+    time_created_mongo = Column(Float)
     time_created_sql = Column(DateTime(timezone=True),
                               server_default=func.now())
 
@@ -157,8 +157,11 @@ def write_to_tweet_database(transformed_data_list, conn_string, echo=False):
         current_tweet_data = transformed_item['tweet_data']
         keyword = transformed_item['key_word'][0]
         LOG.debug('keyword: %s', keyword)
-        kw_tweet_pair = {'tweet_id': current_tweet_data['id'],
-                         'keywords': keyword}
+        kw_tweet_pair = {
+            'tweet_id': current_tweet_data['id'],
+            'keywords': keyword,
+            'time_created_mongo': transformed_item['time_created_mongo']
+        }
 
         write_to_table(current_user_data, UserData, session)
         write_to_table(current_tweet_data, TweetData, session)
@@ -176,6 +179,26 @@ def one_or_more_results(query):
     except MultipleResultsFound:
         pass
     return True
+
+
+def get_last_mongo_time(conn_string, table=KeywordMatches,
+                        time_col='mongo_entry_ts', echo=False):
+    """
+    Return a timestamp matching the most recent record in the KeywordMatches
+    table, based on the time it was loaded into mongo
+    """
+    engine = create_engine(conn_string, echo=echo)
+    session = sessionmaker(bind=engine)()
+    LOG.debug("Querying for latest entry in table '%s' under column '%s'",
+              table.__tablename__, time_col)
+    column = getattr(table, time_col)
+    query = session.query(column).order_by(column.desc())
+    if one_or_more_results(query):
+        result = query.first()
+    else:
+        LOG.debug("No results from query (last)")
+        result = None
+    return result
 
 
 def get_tweets_since(since_datetime, conn_string,

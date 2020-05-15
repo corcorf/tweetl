@@ -146,7 +146,8 @@ def transform_data(data_list):
             'key_word': item['key_words'],
             'mongo_entry_ts': item['mongo_entry_ts'],
             'user_data': get_user_data(tweet),
-            'tweet_data': get_tweet_data(tweet)
+            'tweet_data': get_tweet_data(tweet),
+            'time_created_mongo': item['mongo_entry_ts']
         }
         transformed_data_list.append(transformed_item)
     return transformed_data_list
