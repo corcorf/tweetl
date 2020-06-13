@@ -74,7 +74,18 @@ def post_message(since_datetime, sql_conn_string, search_term,
     LOG.debug(response)
 
 
-def main(args):
+def message_task(sql_conn_string, search_term, t_offset):
+    """
+    Complete slackbot task for use in Airflow DAG
+    """
+    client = get_client()
+    channel = "#flanns_slackbot_test"
+    since_datetime = datetime.now() - timedelta(0, t_offset)
+    post_message(since_datetime, sql_conn_string, search_term,
+                 client, channel)
+
+
+def main(args, channel="#flanns_slackbot_test"):
     """
     Run slack bot with arguments from command line
     args should be an argparse namespace object including the following fields:
@@ -83,7 +94,6 @@ def main(args):
     """
     freq, sql_conn_string, search_term = extract_args(args)
     client = get_client()
-    channel = "#flanns_slackbot_test"
 
     while True:
         since_datetime = datetime.now() - timedelta(0, freq)
