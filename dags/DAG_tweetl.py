@@ -4,7 +4,7 @@ Airflow DAG
 
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 from airflow import DAG
@@ -16,7 +16,8 @@ from tweetl.slack_bot import message_task
 
 LOG = logging.getLogger('tweetl.etl')
 
-load_dotenv()
+load_dotenv(dotenv_path="/app/.env")
+
 MONGO_HOSTNAME = os.getenv('MONGO_CONTAINER_NAME')
 SQL_CONN_STRING = get_conn_string(
     host=os.getenv('PG_CONTAINER_NAME'),
@@ -26,14 +27,13 @@ SQL_CONN_STRING = get_conn_string(
     db=os.getenv('PG_DB_NAME'),
 )
 KEY_WORDS = os.getenv("KEY_WORDS")
-FREQ = os.getenv('ETL_FREQUENCY')
+FREQ = int(os.getenv('ETL_FREQUENCY'))
 
 default_args = {
     'owner': 'airflow',
-    # 'start_date': datetime.now(),
-    # 'start_date': datetime(2020, 2, 21, 13, 30, 00),
+    'start_date': datetime.now(),
     'concurrency': 1,
-    'retries': 0
+    'retries': 2
 }
 
 
@@ -52,10 +52,12 @@ def run_slackbot():
     message_task(SQL_CONN_STRING, KEY_WORDS, FREQ)
 
 
-with DAG('tweetl_dag',
-         description='Performs ETL round and triggers slackbot',
-         schedule_interval=f'*/{FREQ//60} * * * *',
-         default_args=default_args) as tweetl_dag:
+with DAG(
+    'tweetl_dag',
+    description='Performs ETL round and triggers slackbot',
+    schedule_interval=timedelta(seconds=FREQ),
+    default_args=default_args
+) as tweetl_dag:
 
     etl = PythonOperator(
         task_id='ETL', python_callable=etl_with_hostname, dag=tweetl_dag
