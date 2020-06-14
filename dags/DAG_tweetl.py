@@ -4,11 +4,12 @@ Airflow DAG
 
 import os
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from dotenv import load_dotenv
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
+from airflow.utils.dates import days_ago
 
 from tweetl.sql_operations import get_conn_string
 from tweetl.etl import etl_round
@@ -31,9 +32,12 @@ FREQ = int(os.getenv('ETL_FREQUENCY'))
 
 default_args = {
     'owner': 'airflow',
-    'start_date': datetime.now(),
+    'depends_on_past': False,
+    'start_date': days_ago(1),
     'concurrency': 1,
-    'retries': 2
+    'retries': 2,
+    'schedule_interval': timedelta(seconds=FREQ),
+    'catchup': False,
 }
 
 
@@ -55,16 +59,27 @@ def run_slackbot():
 with DAG(
     'tweetl_dag',
     description='Performs ETL round and triggers slackbot',
-    schedule_interval=timedelta(seconds=FREQ),
     default_args=default_args
 ) as tweetl_dag:
 
     etl = PythonOperator(
         task_id='ETL', python_callable=etl_with_hostname, dag=tweetl_dag
     )
+    etl.doc_md = """\
+    #### TWEETL ETL JOB
+    - Extract tweets from MongoDB
+    - Transform JSON-like documents to table structure, adding processing times
+    and sentiment analysis scores
+    - Load transformed tweets to PostgreSQL
+    """
 
     slackbot = PythonOperator(
         task_id='transform', python_callable=run_slackbot, dag=tweetl_dag
     )
+    slackbot.doc_md = """\
+    #### SLACKBOT TASK
+    - Post a message summarising the sentiment of tweets processed in the
+    preceding ETL round
+    """
 
     etl >> slackbot
