@@ -29,7 +29,6 @@ docker run --name $container_name -it \
 -e KEY_WORDS=$keyword \
 --net=$NETWORK_NAME \
 -v ${PWD}/${host_log_dir}:$CONTAINER_LOG_PATH \
--v ${PWD}/dags:/usr/local/airflow/dags \
 --link $PG_CONTAINER_NAME \
 --link $MONGO_CONTAINER_NAME \
 --user "airflow" \

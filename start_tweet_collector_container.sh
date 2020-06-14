@@ -11,7 +11,7 @@ echo "#######################"
 echo
 
 keyword=$1
-echo "container keyword $keyword"
+echo "container keyword: '$keyword'"
 container_name="${TWEET_COLLECTOR_IMAGE_NAME}_${keyword}"
 host_log_dir=logs
 echo "host_log_dir: ${PWD}/${host_log_dir}"

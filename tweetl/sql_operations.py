@@ -251,8 +251,8 @@ def get_tweets_between(start_datetime, end_datetime, conn_string,
     return result
 
 
-
-# def get_tweets_for_time_window(start_time, end_time, search_term, conn_string):
+# def get_tweets_for_time_window(start_time, end_time,
+#                                search_term, conn_string):
 #     """
 #     """
 #     engine = create_engine(conn_string, echo=False)
