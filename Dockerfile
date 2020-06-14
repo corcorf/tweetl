@@ -8,6 +8,6 @@ COPY ./tweetl /app/tweetl/
 COPY setup.py /app/
 RUN pip install /app
 COPY ./dags /usr/local/airflow/dags
-COPY .env /app/
-RUN ["/bin/bash", "-c", "source /app/.env"]
+COPY .env /
+RUN ["/bin/bash", "-c", "source /.env"]
 ENTRYPOINT ["python", "/app/tweetl"]
