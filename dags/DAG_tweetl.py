@@ -11,7 +11,7 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.utils.dates import days_ago
 
-from tweetl.sql_operations import get_conn_string
+from tweetl.sql_operations import get_conn_string, create_tables
 from tweetl.etl import etl_round
 from tweetl.slack_bot import message_task
 
@@ -22,7 +22,7 @@ load_dotenv(dotenv_path="/app/.env")
 MONGO_HOSTNAME = os.getenv('MONGO_CONTAINER_NAME')
 SQL_CONN_STRING = get_conn_string(
     host=os.getenv('PG_CONTAINER_NAME'),
-    port=os.getenv('PG_PORT'),
+    port=5432,
     username=os.getenv('PG_USER'),
     password=os.getenv('PG_PASSWORD'),
     db=os.getenv('PG_DB_NAME'),
@@ -33,12 +33,19 @@ FREQ = int(os.getenv('ETL_FREQUENCY'))
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': days_ago(1),
+    'start_date': days_ago(0),
     'concurrency': 1,
     'retries': 2,
     'schedule_interval': timedelta(seconds=FREQ),
     'catchup': False,
 }
+
+
+def create_postgres_db():
+    """
+    Wrapper for tweet.sql_operations.create_tables
+    """
+    create_tables(SQL_CONN_STRING, echo=False)
 
 
 def etl_with_hostname():
@@ -54,6 +61,26 @@ def run_slackbot():
     Wrapper around the tweet.slack_bot.message_task function fro use in DAG
     """
     message_task(SQL_CONN_STRING, KEY_WORDS, FREQ)
+
+
+with DAG(
+    'create_postgres_db',
+    description="Creates Postgres DB for tweets if it doesn't already exist",
+    schedule_interval="@once",
+    default_args=default_args
+) as create_pgdb_dag:
+
+    create_db = PythonOperator(
+        task_id='create_db', python_callable=create_postgres_db,
+        dag=create_pgdb_dag
+    )
+    create_db.doc_md = """\
+    #### CREATE PGDB
+    Creates a database in Postgres for the transformed tweet data, \
+    if one does not already exist
+    """
+
+    create_db
 
 
 with DAG(
@@ -74,7 +101,7 @@ with DAG(
     """
 
     slackbot = PythonOperator(
-        task_id='transform', python_callable=run_slackbot, dag=tweetl_dag
+        task_id='slackbot', python_callable=run_slackbot, dag=tweetl_dag
     )
     slackbot.doc_md = """\
     #### SLACKBOT TASK

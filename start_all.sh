@@ -48,7 +48,7 @@ else
   for kw in $keywords
   do
     echo "skipping tweet collector"
-    # /bin/bash start_tweet_collector_container.sh $kw
+    /bin/bash start_tweet_collector_container.sh $kw
   done
   /bin/bash start_airflow_container.sh $kw
   # /bin/bash start_etl_job_container.sh

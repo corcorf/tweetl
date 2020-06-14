@@ -182,7 +182,7 @@ def one_or_more_results(query):
 
 
 def get_last_mongo_time(conn_string, table=KeywordMatches,
-                        time_col='mongo_entry_ts', echo=False):
+                        time_col='time_created_mongo', echo=False):
     """
     Return a timestamp matching the most recent record in the KeywordMatches
     table, based on the time it was loaded into mongo
