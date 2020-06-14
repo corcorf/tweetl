@@ -75,10 +75,10 @@ def authenticate():
     variables.
     """
     LOG.info('authenticating')
-    auth = OAuthHandler(os.getenv("CONSUMER_API_KEY"),
-                        os.getenv("CONSUMER_API_SECRET"))
-    auth.set_access_token(os.getenv("ACCESS_TOKEN"),
-                          os.getenv("ACCESS_TOKEN_SECRET"))
+    auth = OAuthHandler(os.environ["CONSUMER_API_KEY"],
+                        os.environ["CONSUMER_API_SECRET"])
+    auth.set_access_token(os.environ["ACCESS_TOKEN"],
+                          os.environ["ACCESS_TOKEN_SECRET"])
     return auth
 
 
