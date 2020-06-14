@@ -17,7 +17,7 @@ from tweetl.slack_bot import message_task
 
 LOG = logging.getLogger('tweetl.etl')
 
-load_dotenv(dotenv_path="/app/.env")
+load_dotenv()
 
 MONGO_HOSTNAME = os.getenv('MONGO_CONTAINER_NAME')
 SQL_CONN_STRING = get_conn_string(
@@ -28,15 +28,15 @@ SQL_CONN_STRING = get_conn_string(
     db=os.getenv('PG_DB_NAME'),
 )
 KEY_WORDS = os.getenv("KEY_WORDS")
-FREQ = int(os.getenv('ETL_FREQUENCY'))
+FREQ = int(os.getenv('ETL_FREQUENCY', default=300))
 
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': days_ago(0),
+    'start_date': days_ago(1),
     'concurrency': 1,
     'retries': 2,
-    'schedule_interval': timedelta(seconds=FREQ),
+    # 'schedule_interval': f"0/{FREQ//60} * * * *",
     'catchup': False,
 }
 
@@ -86,6 +86,8 @@ with DAG(
 with DAG(
     'tweetl_dag',
     description='Performs ETL round and triggers slackbot',
+    schedule_interval=timedelta(seconds=FREQ),
+    catchup=False,
     default_args=default_args
 ) as tweetl_dag:
 
