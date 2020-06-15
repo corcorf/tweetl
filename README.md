@@ -9,7 +9,7 @@ NB: this repo requires you to have your own API keys for Twitter and Slack. You'
 - ```source start_all.sh <keywords>```
 
 ## Features:
-- Fully scripted ETL data pipeline
+- Scheduling of ETL job and slackbot with Airflow 
 - Separate Docker containers for all processes
 - Streaming tweets from Twitter API using tweepy
 - MongoDB for immediate storage of tweets
